@@ -1,81 +1,58 @@
-import tkinter as tk
-from tkinter import messagebox
+from flask import Flask, request
+app = Flask(__name__)
+bookings = []
 
-PRICES = {
-    "House Cleaning": 80,
-    "Hotel Cleaning": 120,
-    "Office Cleaning": 100,
-    "Deep Cleaning": 150
-}
+@app.route('/')
+def home():
+    return """<h1 style='color:#2563eb; text-align:center;'>Renato Cleaning</h1>
+    <p style='text-align:center;'>Fast, honest, and clean! - Madrid</p>
+    <p style='text-align:center;'><a href='/book'>BOOK NOW ✅</a> | <a href='/services'>Services</a> | <a href='/contact'>Contact</a></p>
+    <h2>Welcome!</h2><p>We clean houses, hotels and offices in Madrid.</p>"""
 
-def update_price(*args):
-    service = service_var.get()
-    price_label.config(text=f"Price: €{PRICES[service]}")
+@app.route('/services')
+def services():
+    return """<h1>Services & Prices</h1><ul>
+    <li>House Cleaning - €80</li>
+    <li>Hotel Cleaning - €120</li>
+    <li>Office Cleaning - €100</li>
+    <li>Deep Cleaning - €150</li></ul>
+    <p><a href='/book'>Book Now</a> | <a href='/'>Home</a></p>"""
 
-def save_booking():
-    name = entry_name.get()
-    phone = entry_phone.get()
-    service = service_var.get()
-    date = entry_date.get()
-    address = entry_address.get()
+@app.route('/contact')
+def contact():
+    return "<h1>Contact</h1><p>Renato Cleaning - Madrid, Spain</p><p><a href='/'>Home</a></p>"
 
-    if name == "" or phone == "" or date == "":
-        messagebox.showwarning("Missing!", "Please fill Name, Phone and Date!")
-        return
+@app.route('/book', methods=['GET','POST'])
+def book():
+    if request.method == 'POST':
+        name = request.form['name']
+        service = request.form['service']
+        date = request.form['date']
+        bookings.append(f"{name} | {service} | {date}")
+        return f"<h1>Thank you {name}!</h1><p>Renato will call you for {date}!</p><p>Service: {service}</p><p><a href='/book'>Book Another</a> | <a href='/'>Home</a></p>"
+    return """<h1>Book Your Cleaning</h1>
+    <form method='POST'>
+    Name:<br><input name='name' required><br><br>
+    Phone:<br><input name='phone' required><br><br>
+    Service:<br><select name='service'>
+    <option>House Cleaning - €80</option>
+    <option>Hotel Cleaning - €120</option>
+    <option>Office Cleaning - €100</option>
+    <option>Deep Cleaning - €150</option></select><br><br>
+    Date:<br><input name='date' placeholder='28 Nov 2026' required><br><br>
+    Address:<br><input name='address'><br><br>
+    <button style='background:#2563eb; color:white; padding:10px 20px;'>BOOK NOW ✅</button>
+    </form><p><a href='/'>Home</a></p>"""
 
-    price = PRICES[service]
-    with open("bookings.txt", "a") as f:
-        f.write(f"{name} | {phone} | {service} | €{price} | {date} | {address}\n")
+@app.route('/bookings')
+def view():
+    if not bookings:
+        return "<h1>No bookings yet!</h1><p><a href='/book'>Book Now</a></p>"
+    html = "<h1>All Bookings</h1><ul>"
+    for b in bookings:
+        html += f"<li>{b}</li>"
+    html += "</ul><p><a href='/'>Home</a></p>"
+    return html
 
-    messagebox.showinfo("Booked!", f"Thank you {name}!\nService: {service}\nPrice: €{price}\nRenato will call you for {date}!")
-    entry_name.delete(0, tk.END)
-    entry_phone.delete(0, tk.END)
-    entry_date.delete(0, tk.END)
-    entry_address.delete(0, tk.END)
-
-def view_bookings():
-    try:
-        with open("bookings.txt", "r") as f:
-            all_bookings = f.read()
-        if all_bookings == "":
-            all_bookings = "No bookings yet!"
-    except:
-        all_bookings = "No bookings yet!"
-    messagebox.showinfo("All My Bookings", all_bookings)
-
-app = tk.Tk()
-app.title("Renato Cleaning - Booking App V2")
-app.geometry("400x520")
-app.configure(bg="white")
-
-tk.Label(app, text="Renato Cleaning", font=("Arial", 20, "bold"), bg="white", fg="#2563eb").pack(pady=10)
-tk.Label(app, text="Booking App V2 - With Price!", bg="white").pack()
-
-tk.Label(app, text="Your Name:", bg="white").pack(pady=(10,0))
-entry_name = tk.Entry(app, width=35)
-entry_name.pack()
-
-tk.Label(app, text="Phone:", bg="white").pack(pady=(10,0))
-entry_phone = tk.Entry(app, width=35)
-entry_phone.pack()
-
-tk.Label(app, text="Service:", bg="white").pack(pady=(10,0))
-service_var = tk.StringVar(value="House Cleaning")
-service_var.trace("w", update_price)
-tk.OptionMenu(app, service_var, "House Cleaning", "Hotel Cleaning", "Office Cleaning", "Deep Cleaning").pack()
-
-price_label = tk.Label(app, text="Price: €80", bg="white", font=("Arial", 14, "bold"), fg="green")
-price_label.pack(pady=5)
-
-tk.Label(app, text="Date:", bg="white").pack(pady=(5,0))
-entry_date = tk.Entry(app, width=35)
-entry_date.pack()
-
-tk.Label(app, text="Address in Madrid:", bg="white").pack(pady=(10,0))
-entry_address = tk.Entry(app, width=35)
-entry_address.pack()
-
-tk.Button(app, text="BOOK NOW ✅", bg="#2563eb", fg="white", font=("Arial", 14, "bold"), width=20, command=save_booking).pack(pady=15)
-tk.Button(app, text="VIEW ALL BOOKINGS 📋", bg="white", fg="#2563eb", font=("Arial", 11, "bold"), width=22, command=view_bookings).pack()
-
-app.mainloop()
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=10000)
