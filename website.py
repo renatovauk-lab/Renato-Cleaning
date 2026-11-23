@@ -1,51 +1,81 @@
-from flask import Flask
+import tkinter as tk
+from tkinter import messagebox
 
-app = Flask(__name__)
+PRICES = {
+    "House Cleaning": 80,
+    "Hotel Cleaning": 120,
+    "Office Cleaning": 100,
+    "Deep Cleaning": 150
+}
 
-# PAGE 1 - HOME
-@app.route("/")
-def home():
-    return """
-    <h1>Renato Cleaning Services</h1>
-    <a href="/">Home</a> | <a href="/about">About</a> | <a href="/services">Services</a> | <a href="/contact">Contact</a>
-    <p>Welcome! We clean hotels and houses in Madrid.</p>
-    <p>Fast, honest, and clean!</p>
-    """
+def update_price(*args):
+    service = service_var.get()
+    price_label.config(text=f"Price: €{PRICES[service]}")
 
-# PAGE 2 - ABOUT
-@app.route("/about")
-def about():
-    return """
-    <h1>About Us</h1>
-    <a href="/">Home</a> | <a href="/about">About</a> | <a href="/services">Services</a> | <a href="/contact">Contact</a>
-    <p>My name is Renato. I am from Philippines. I live in Madrid.</p>
-    <p>I am hardworking, honest, and punctual.</p>
-    """
+def save_booking():
+    name = entry_name.get()
+    phone = entry_phone.get()
+    service = service_var.get()
+    date = entry_date.get()
+    address = entry_address.get()
 
-# PAGE 3 - SERVICES
-@app.route("/services")
-def services():
-    return """
-    <h1>Our Services</h1>
-    <a href="/">Home</a> | <a href="/about">About</a> | <a href="/services">Services</a> | <a href="/contact">Contact</a>
-    <p>1. Hotel Housekeeping</p>
-    <p>2. House Cleaning</p>
-    <p>3. Deep Cleaning</p>
-    <p>Price: Call us for price!</p>
-    """
+    if name == "" or phone == "" or date == "":
+        messagebox.showwarning("Missing!", "Please fill Name, Phone and Date!")
+        return
 
-# PAGE 4 - CONTACT
-@app.route("/contact")
-def contact():
-    return """
-    <h1>Contact Us</h1>
-    <a href="/">Home</a> | <a href="/about">About</a> | <a href="/services">Services</a> | <a href="/contact">Contact</a>
-    <p>Email: porsunarenato@gmail.com</p>
-    <p>Phone: 611 273 883</p>
-    <p>Madrid, Spain</p>
-    """
+    price = PRICES[service]
+    with open("bookings.txt", "a") as f:
+        f.write(f"{name} | {phone} | {service} | €{price} | {date} | {address}\n")
 
-import os
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5001))
-    app.run(host="0.0.0.0", port=port)
+    messagebox.showinfo("Booked!", f"Thank you {name}!\nService: {service}\nPrice: €{price}\nRenato will call you for {date}!")
+    entry_name.delete(0, tk.END)
+    entry_phone.delete(0, tk.END)
+    entry_date.delete(0, tk.END)
+    entry_address.delete(0, tk.END)
+
+def view_bookings():
+    try:
+        with open("bookings.txt", "r") as f:
+            all_bookings = f.read()
+        if all_bookings == "":
+            all_bookings = "No bookings yet!"
+    except:
+        all_bookings = "No bookings yet!"
+    messagebox.showinfo("All My Bookings", all_bookings)
+
+app = tk.Tk()
+app.title("Renato Cleaning - Booking App V2")
+app.geometry("400x520")
+app.configure(bg="white")
+
+tk.Label(app, text="Renato Cleaning", font=("Arial", 20, "bold"), bg="white", fg="#2563eb").pack(pady=10)
+tk.Label(app, text="Booking App V2 - With Price!", bg="white").pack()
+
+tk.Label(app, text="Your Name:", bg="white").pack(pady=(10,0))
+entry_name = tk.Entry(app, width=35)
+entry_name.pack()
+
+tk.Label(app, text="Phone:", bg="white").pack(pady=(10,0))
+entry_phone = tk.Entry(app, width=35)
+entry_phone.pack()
+
+tk.Label(app, text="Service:", bg="white").pack(pady=(10,0))
+service_var = tk.StringVar(value="House Cleaning")
+service_var.trace("w", update_price)
+tk.OptionMenu(app, service_var, "House Cleaning", "Hotel Cleaning", "Office Cleaning", "Deep Cleaning").pack()
+
+price_label = tk.Label(app, text="Price: €80", bg="white", font=("Arial", 14, "bold"), fg="green")
+price_label.pack(pady=5)
+
+tk.Label(app, text="Date:", bg="white").pack(pady=(5,0))
+entry_date = tk.Entry(app, width=35)
+entry_date.pack()
+
+tk.Label(app, text="Address in Madrid:", bg="white").pack(pady=(10,0))
+entry_address = tk.Entry(app, width=35)
+entry_address.pack()
+
+tk.Button(app, text="BOOK NOW ✅", bg="#2563eb", fg="white", font=("Arial", 14, "bold"), width=20, command=save_booking).pack(pady=15)
+tk.Button(app, text="VIEW ALL BOOKINGS 📋", bg="white", fg="#2563eb", font=("Arial", 11, "bold"), width=22, command=view_bookings).pack()
+
+app.mainloop()
